@@ -3,22 +3,37 @@ import {
     AsyncFunction,
     getCachedData,
     setCachedData,
+    UseFetchDataOptions,
     UseFetchDataProps,
 } from "./useFetchDataService";
 
 const ongoingRequests = new Map<string, Promise<unknown>>();
 
-export const useFetchData = <Response, Parameters extends unknown[]>(
-    asyncFunction: AsyncFunction<Response, Parameters>,
-    { parameters, options }: UseFetchDataProps<Parameters>
-) => {
+export interface UseFetchDataReturn<Response> {
+    data: Response | null;
+    isLoading: boolean;
+    isError: boolean;
+    error: Error | null;
+    hasFetchedSinceMount: boolean;
+    refetch: () => Promise<Response>;
+    resetErrors: () => void;
+}
+
+// Implementation
+export function useFetchData<Response, Parameters extends unknown[]>(
+    asyncFunction: (...parameters: Parameters) => Promise<Response>,
+    props: UseFetchDataProps<Parameters>
+): UseFetchDataReturn<Response> {
+    const { options } = props;
+    const parameters =
+        "parameters" in props ? props.parameters : ([] as unknown as Parameters);
     const [data, setData] = useState<Response | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
     const [hasFetchedSinceMount, setHasFetchedSinceMount] = useState(false);
 
-    const executeFetchFunction = async () => {
+    const executeFetchFunction = async (): Promise<Response> => {
         setIsLoading(true);
         setHasFetchedSinceMount(true);
         setIsError(false);
@@ -29,7 +44,7 @@ export const useFetchData = <Response, Parameters extends unknown[]>(
                 if (cachedData) {
                     setData(cachedData);
                     setIsLoading(false);
-                    return null;
+                    return cachedData;
                 }
             }
 
@@ -45,7 +60,9 @@ export const useFetchData = <Response, Parameters extends unknown[]>(
 
             const params = parameters || ([] as unknown as Parameters);
 
-            const fetchPromise: Promise<Response> = asyncFunction(...params)
+            const fetchPromise: Promise<Response> = asyncFunction(
+                ...(params as Parameters)
+            )
                 .then(async (result) => {
                     if (options?.key) {
                         setCachedData(options.key, result);
@@ -66,11 +83,14 @@ export const useFetchData = <Response, Parameters extends unknown[]>(
             const result = await fetchPromise;
             setData(result);
             setIsLoading(false);
+
+            return result;
         } catch (error) {
             const typedError = error as Error;
             setError(typedError);
             setIsError(true);
             setIsLoading(false);
+            throw typedError;
         }
     };
 
@@ -94,4 +114,4 @@ export const useFetchData = <Response, Parameters extends unknown[]>(
         refetch: executeFetchFunction,
         resetErrors,
     };
-};
+}

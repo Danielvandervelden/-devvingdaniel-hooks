@@ -4,14 +4,14 @@ interface FetchCatFactResponse {
     fact: string;
 }
 
-const fetchCatFact = (): Promise<FetchCatFactResponse> => {
-    return fetch("http://localhost:1234/random-fact").then((response) => response.json());
+const fetchCatFact = ({ url }: { url: string }): Promise<FetchCatFactResponse> => {
+    return fetch(url).then((response) => response.json());
 };
 
 export default function App() {
     const { data, isLoading } = useFetchData(fetchCatFact, {
-        options: { key: "catFact", enabled: false },
-        parameters: [],
+        options: { key: "catFact", enabled: true },
+        parameters: [{ url: "http://localhost:1234/random-fact" }],
     });
 
     return (

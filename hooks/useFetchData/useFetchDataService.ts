@@ -9,10 +9,9 @@ export type AsyncFunction<Response, Parameters extends unknown[]> = (
     ...parameters: Parameters
 ) => Promise<Response>;
 
-export interface UseFetchDataProps<Parameters extends unknown[]> {
-    parameters: Parameters;
-    options?: UseFetchDataOptions;
-}
+export type UseFetchDataProps<Parameters extends unknown[]> = Parameters extends []
+    ? { options?: UseFetchDataOptions }
+    : { parameters: Parameters; options?: UseFetchDataOptions };
 
 export const setCachedData = <Response>(
     key: string,
