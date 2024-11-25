@@ -1,22 +1,17 @@
 import { useEffect, useState } from "react";
-import {
-    AsyncFunction,
-    getCachedData,
-    setCachedData,
-    UseFetchDataOptions,
-    UseFetchDataProps,
-} from "./useFetchDataService";
+import { getCachedData, setCachedData, UseFetchDataProps } from "./useFetchDataService";
 
 const ongoingRequests = new Map<string, Promise<unknown>>();
 
 export interface UseFetchDataReturn<Response> {
     data: Response | null;
-    isLoading: boolean;
+    isFetching: boolean;
     isError: boolean;
     error: Error | null;
     hasFetchedSinceMount: boolean;
     refetch: () => Promise<Response>;
     resetErrors: () => void;
+    resetData: () => void;
 }
 
 // Implementation
@@ -28,13 +23,13 @@ export function useFetchData<Response, Parameters extends unknown[]>(
     const parameters =
         "parameters" in props ? props.parameters : ([] as unknown as Parameters);
     const [data, setData] = useState<Response | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
     const [isError, setIsError] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
     const [hasFetchedSinceMount, setHasFetchedSinceMount] = useState(false);
 
     const executeFetchFunction = async (): Promise<Response> => {
-        setIsLoading(true);
+        setIsFetching(true);
         setHasFetchedSinceMount(true);
         setIsError(false);
         setError(null);
@@ -43,7 +38,7 @@ export function useFetchData<Response, Parameters extends unknown[]>(
                 const cachedData = getCachedData<Response>(options.key);
                 if (cachedData) {
                     setData(cachedData);
-                    setIsLoading(false);
+                    setIsFetching(false);
                     return cachedData;
                 }
             }
@@ -54,7 +49,7 @@ export function useFetchData<Response, Parameters extends unknown[]>(
                 ) as Promise<Response>;
                 const result = await existingPromise;
                 setData(result);
-                setIsLoading(false);
+                setIsFetching(false);
                 return result;
             }
 
@@ -79,17 +74,17 @@ export function useFetchData<Response, Parameters extends unknown[]>(
                 ongoingRequests.set(options.key, fetchPromise);
             }
 
-            setIsLoading(true);
+            setIsFetching(true);
             const result = await fetchPromise;
             setData(result);
-            setIsLoading(false);
+            setIsFetching(false);
 
             return result;
         } catch (error) {
             const typedError = error as Error;
             setError(typedError);
             setIsError(true);
-            setIsLoading(false);
+            setIsFetching(false);
             throw typedError;
         }
     };
@@ -97,6 +92,10 @@ export function useFetchData<Response, Parameters extends unknown[]>(
     const resetErrors = () => {
         setIsError(false);
         setError(null);
+    };
+
+    const resetData = () => {
+        setData(null);
     };
 
     useEffect(() => {
@@ -107,11 +106,12 @@ export function useFetchData<Response, Parameters extends unknown[]>(
 
     return {
         data,
-        isLoading,
+        isFetching,
         error,
         isError,
         hasFetchedSinceMount,
         refetch: executeFetchFunction,
         resetErrors,
+        resetData,
     };
 }
