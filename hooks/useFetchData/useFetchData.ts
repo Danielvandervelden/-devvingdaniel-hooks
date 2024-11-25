@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getCachedData, setCachedData, UseFetchDataProps } from "./useFetchDataService";
 
 const ongoingRequests = new Map<string, Promise<unknown>>();
@@ -28,11 +28,9 @@ export function useFetchData<Response, Parameters extends unknown[]>(
     const [error, setError] = useState<Error | null>(null);
     const [hasFetchedSinceMount, setHasFetchedSinceMount] = useState(false);
 
-    const executeFetchFunction = async (): Promise<Response> => {
+    const executeFetchFunction = useCallback(async (): Promise<Response> => {
         setIsFetching(true);
         setHasFetchedSinceMount(true);
-        setIsError(false);
-        setError(null);
         try {
             if (options?.key) {
                 const cachedData = getCachedData<Response>(options.key);
@@ -74,6 +72,8 @@ export function useFetchData<Response, Parameters extends unknown[]>(
                 ongoingRequests.set(options.key, fetchPromise);
             }
 
+            setIsError(false);
+            setError(null);
             setIsFetching(true);
             const result = await fetchPromise;
             setData(result);
@@ -85,18 +85,18 @@ export function useFetchData<Response, Parameters extends unknown[]>(
             setError(typedError);
             setIsError(true);
             setIsFetching(false);
-            throw typedError;
+            return Promise.reject(typedError);
         }
-    };
+    }, [asyncFunction, options?.key, parameters]);
 
-    const resetErrors = () => {
+    const resetErrors = useCallback(() => {
         setIsError(false);
         setError(null);
-    };
+    }, []);
 
-    const resetData = () => {
+    const resetData = useCallback(() => {
         setData(null);
-    };
+    }, []);
 
     useEffect(() => {
         if (options?.enabled !== false) {
