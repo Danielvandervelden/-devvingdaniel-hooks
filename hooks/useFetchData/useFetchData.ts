@@ -58,7 +58,7 @@ export function useFetchData<Response, Parameters extends unknown[]>(
             )
                 .then(async (result) => {
                     if (options?.key) {
-                        setCachedData(options.key, result);
+                        setCachedData(options.key, result, props.options?.ttl);
                     }
                     return result;
                 })

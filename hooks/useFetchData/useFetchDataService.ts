@@ -3,6 +3,7 @@ export const CACHE_KEY = "useFetchDataCache";
 export interface UseFetchDataOptions {
     enabled?: boolean;
     key?: string | null;
+    ttl?: number;
 }
 
 export type AsyncFunction<Response, Parameters extends unknown[]> = (
