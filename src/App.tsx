@@ -13,8 +13,8 @@ const fetchCatFact = (url?: string): Promise<FetchCatFactResponse> => {
 
 export default function App() {
     const { data, isFetching } = useFetchData(fetchCatFact, {
-        options: { key: "catFact", enabled: true },
-        parameters: [],
+        options: { key: "catFactt", enabled: true, ttl: 300 },
+        parameters: ["https://cat-fact.herokuapp.com/fact"],
     });
 
     return (
